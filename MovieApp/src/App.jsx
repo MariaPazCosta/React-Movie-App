@@ -4,6 +4,8 @@ import './App.css'
 import Search from './components/Search'
 import Spiner from './components/Spiner'
 import MovieCard from './components/MovieCard'
+import {useDebounce} from 'react-use'
+import { updateSearchCount } from '../appwrite'
 
 const API_URL_BASE = 'https://api.themoviedb.org/3'
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY
@@ -21,6 +23,7 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState('')
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(false)
+  const [debounceSearchTerm, setdebounceSearchTerm]=useState("")
 
   const fetchMovies = async (query = "") => {
     setMovies([])
@@ -40,6 +43,10 @@ const App = () => {
         return
       }
       setMovies(data.results)
+      
+      if(query && data.results.length > 0){
+        await updateSearchCount(query, data.results[0])
+      }
 
     } catch (error) {
       console.error('Error fetching movies:', error)
@@ -51,9 +58,11 @@ const App = () => {
 
   }
 
+  useDebounce(()=> setdebounceSearchTerm(searchTerm), 2000,[searchTerm])
+
   useEffect(() => {
-    fetchMovies(searchTerm)
-  }, [searchTerm])
+    fetchMovies(debounceSearchTerm)
+  }, [debounceSearchTerm])
 
   return (
     <>
